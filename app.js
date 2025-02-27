@@ -86,38 +86,44 @@ function initializeGameElements() {
     // Next Card Handler
     nextCardBtn.addEventListener('click', showNextCard);
 
-    // Initialize drag and drop for game cards
-    initializeDragAndDrop();
+    // Initialize mobile-friendly interaction for game cards
+    initializeMobileInteraction();
 }
 
-function initializeDragAndDrop() {
+function initializeMobileInteraction() {
     const currentCard = document.getElementById('current-card');
+    const slots = document.querySelectorAll('.score-slot');
     
-    // Set up drag start event
-    currentCard.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', 'current-card');
-        currentCard.classList.add('dragging');
+    // Remove draggable attribute
+    currentCard.removeAttribute('draggable');
+    
+    // Add tap-to-select functionality
+    currentCard.addEventListener('click', () => {
+        if (!currentCard.classList.contains('selected')) {
+            currentCard.classList.add('selected');
+            slots.forEach(slot => {
+                if (!slot.classList.contains('filled')) {
+                    slot.classList.add('selectable');
+                }
+            });
+        } else {
+            currentCard.classList.remove('selected');
+            slots.forEach(slot => slot.classList.remove('selectable'));
+        }
     });
 
-    currentCard.addEventListener('dragend', (e) => {
-        currentCard.classList.remove('dragging');
-    });
-
-    // Set up drop zones
-    document.querySelectorAll('.score-slot').forEach(slot => {
-        slot.addEventListener('dragover', e => {
-            // Only allow drop if slot is not filled
-            if (!slot.classList.contains('filled')) {
-                e.preventDefault();
-                slot.classList.add('drag-over');
+    // Add tap-to-place functionality
+    slots.forEach(slot => {
+        slot.addEventListener('click', () => {
+            if (slot.classList.contains('selectable') && !slot.classList.contains('filled')) {
+                const currentCard = document.getElementById('current-card');
+                handleCardPlacement(slot);
+                
+                // Reset selection state
+                currentCard.classList.remove('selected');
+                slots.forEach(s => s.classList.remove('selectable'));
             }
         });
-
-        slot.addEventListener('dragleave', e => {
-            slot.classList.remove('drag-over');
-        });
-
-        slot.addEventListener('drop', handleCardDrop);
     });
 }
 
@@ -246,10 +252,7 @@ function showNextCard() {
     }
 }
 
-function handleCardDrop(e) {
-    e.preventDefault();
-    const slot = e.target.closest('.score-slot');
-    
+function handleCardPlacement(slot) {
     if (!slot || slot.classList.contains('filled')) return;
     
     const slotNumber = parseInt(slot.dataset.slot);
@@ -272,8 +275,6 @@ function handleCardDrop(e) {
             setTimeout(showResults, 1000);
         }
     }
-    
-    slot.classList.remove('drag-over');
 }
 
 function showResults() {

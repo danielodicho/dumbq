@@ -310,27 +310,112 @@ button:disabled {
     margin: 1rem 0;
 }
 
-/* Media Queries */
-@media (min-width: 768px) {
-    #app {
-        max-width: 768px;
-    }
+/* Mobile-friendly styles */
+.question-display {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.2s ease;
+    padding: 1.5rem;
+    margin: 0.5rem;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
-    .player-input {
-        flex-direction: row;
+#current-card.selected {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    border: 2px solid #3498db;
+}
+
+.score-slot {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.3s ease;
+    min-height: 80px;
+    padding: 1rem;
+}
+
+.score-slot.selectable {
+    border-color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
+    transform: scale(1.02);
+}
+
+.score-slot.filled {
+    border-color: #2ecc71;
+    background-color: #f1f9f5;
+}
+
+/* Improved mobile layout */
+@media (max-width: 768px) {
+    #app {
+        padding: 0.5rem;
     }
 
     .scoring-board {
-        flex-direction: row;
+        gap: 0.5rem;
     }
 
     .score-slot {
-        flex: 1;
+        margin: 0.25rem 0;
+        padding: 1rem 0.5rem;
+    }
+
+    .slot-label {
+        font-size: 0.9rem;
+    }
+
+    .slot-points {
+        font-size: 0.8rem;
+    }
+
+    .question-display {
+        font-size: 1rem;
+        padding: 1rem;
+    }
+
+    button {
+        padding: 0.8rem 1rem;
+        min-height: 44px; /* Minimum touch target size */
+    }
+
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+
+    .category-btn {
+        padding: 1rem;
+        min-height: 44px;
+    }
+
+    input[type="text"] {
+        padding: 0.8rem;
+        min-height: 44px;
+    }
+
+    /* Prevent text selection on mobile */
+    * {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Allow text selection in input fields */
+    input[type="text"] {
+        -webkit-user-select: text;
+        user-select: text;
     }
 }
 
-@media (min-width: 1024px) {
-    #app {
-        max-width: 1024px;
+/* Add safe area insets for modern mobile browsers */
+@supports (padding: max(0px)) {
+    body {
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
 }
