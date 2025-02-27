@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dumb Questions Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Lobby/Join Screen -->
+        <div id="lobby-screen" class="screen active">
+            <h1>Dumb Questions Game</h1>
+            <div class="player-input">
+                <input type="text" id="player-name" placeholder="Enter your name">
+                <button id="join-game">Join Game</button>
+            </div>
+            <div class="players-list">
+                <h2>Players</h2>
+                <ul id="joined-players"></ul>
+            </div>
+            <button id="start-game" disabled>Start Game</button>
+        </div>
+
+        <!-- Category Selection Screen -->
+        <div id="category-screen" class="screen">
+            <h2>Select a Category</h2>
+            <div class="game-info">
+                <p>Current Guesser: <span id="current-guesser"></span></p>
+            </div>
+            <div class="categories-grid">
+                <button class="category-btn" data-category="animals">Animals</button>
+                <button class="category-btn" data-category="players">Players</button>
+                <button class="category-btn" data-category="numbers">Numbers</button>
+                <button class="category-btn" data-category="food">Food</button>
+                <button class="category-btn" data-category="objects">Objects</button>
+                <button class="category-btn" data-category="famous-people">Famous People</button>
+            </div>
+        </div>
+
+        <!-- Answer Phase Screen -->
+        <div id="answer-screen" class="screen">
+            <div class="game-info">
+                <h2>Question Phase</h2>
+                <p>Guesser: <span id="answer-phase-guesser"></span> (look away!)</p>
+                <p>Category: <span id="answer-phase-category"></span></p>
+            </div>
+            <div class="question-area">
+                <div id="current-question" class="question-display"></div>
+                <p class="instruction-text">Everyone (except the guesser) discuss your answers!</p>
+                <button id="ready-to-guess" class="action-button">Ready for Guesser</button>
+            </div>
+        </div>
+
+        <!-- Game Screen (Guessing Phase) -->
+        <div id="game-screen" class="screen">
+            <div class="game-info">
+                <h2>Guessing Phase</h2>
+                <p>Guesser: <span id="guessing-phase-guesser"></span></p>
+                <p>Category: <span id="selected-category"></span></p>
+            </div>
+            <div class="current-card-area">
+                <h3>Current Question:</h3>
+                <div id="current-card" class="question-display" draggable="true"></div>
+                <p class="instruction-text">Drag this question to the scoring board. Once placed, it cannot be moved!</p>
+            </div>
+            <div class="scoring-board">
+                <div class="score-slot" data-slot="1">
+                    <div class="slot-label">Most Likely</div>
+                    <div class="slot-points">(4 points)</div>
+                </div>
+                <div class="score-slot" data-slot="2">
+                    <div class="slot-label">Very Likely</div>
+                    <div class="slot-points">(3 points)</div>
+                </div>
+                <div class="score-slot" data-slot="3">
+                    <div class="slot-label">Possibly</div>
+                    <div class="slot-points">(2 points)</div>
+                </div>
+                <div class="score-slot" data-slot="4">
+                    <div class="slot-label">Less Likely</div>
+                    <div class="slot-points">(1 point)</div>
+                </div>
+                <div class="score-slot" data-slot="5">
+                    <div class="slot-label">Least Likely</div>
+                    <div class="slot-points">(0 points)</div>
+                </div>
+            </div>
+            <div class="next-card-area">
+                <p id="cards-remaining"></p>
+                <button id="next-card" class="action-button" style="display: none;">Next Question</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h2>Round Results</h2>
+            <div id="round-score"></div>
+            <div id="total-scores"></div>
+            <button id="next-round">Next Round</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
