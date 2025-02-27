@@ -26,7 +26,24 @@ const screens = {
 
 // Initialize Game Elements
 document.addEventListener('DOMContentLoaded', () => {
+    // Reset game state
+    gameState.currentPhase = 'lobby';
+    gameState.players = [];
+    gameState.currentGuesser = null;
+    gameState.currentRound = 0;
+    gameState.scores = {};
+    
+    // Show lobby screen by default
+    Object.values(screens).forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+    });
+    screens.lobby.style.display = 'flex';
+    screens.lobby.classList.add('active');
+    
+    // Initialize all game elements
     initializeGameElements();
+    setMobileHeight();
 });
 
 function initializeGameElements() {
@@ -38,93 +55,258 @@ function initializeGameElements() {
     const readyToGuessBtn = document.getElementById('ready-to-guess');
     const nextCardBtn = document.getElementById('next-card');
 
-    // Join Game Handler
-    joinGameBtn.addEventListener('click', () => {
+    // Join Game Handler with debugging
+    function handleJoinGame() {
+        console.log('Join game handler called'); // Debug log
         const playerName = playerNameInput.value.trim();
+        console.log('Player name:', playerName); // Debug log
+        
         if (playerName && !gameState.players.includes(playerName)) {
+            console.log('Adding player:', playerName); // Debug log
             gameState.players.push(playerName);
             gameState.scores[playerName] = 0;
-            updatePlayersList();
             playerNameInput.value = '';
             
             // Enable start game button if enough players
             startGameBtn.disabled = gameState.players.length < 3;
+            startGameBtn.textContent = gameState.players.length < 3 
+                ? `Start Game (Need ${3 - gameState.players.length} more)`
+                : 'Start Game';
+            
+            // Update players list
+            updatePlayersList();
+            console.log('Current players:', gameState.players); // Debug log
+        }
+    }
+
+    // Add click handler
+    joinGameBtn.addEventListener('click', handleJoinGame);
+
+    // Add touch handler for mobile
+    joinGameBtn.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent any default touch behavior
+        handleJoinGame();
+    });
+
+    // Handle Enter key in the input field
+    playerNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevent default enter key behavior
+            handleJoinGame();
         }
     });
 
     // Start Game Handler
-    startGameBtn.addEventListener('click', () => {
+    function handleStartGame() {
+        console.log('Start game handler called'); // Debug log
         if (gameState.players.length >= 3) {
-            gameState.maxRounds = gameState.players.length <= 5 ? gameState.players.length * 2 : gameState.players.length;
+            console.log('Starting game with players:', gameState.players); // Debug log
+            
+            // Initialize game state
+            gameState.currentRound = 0;
+            gameState.currentGuesser = gameState.players[0];
+            gameState.scores = {};
+            gameState.players.forEach(player => gameState.scores[player] = 0);
+            
+            // Start first round
             startNewRound();
         }
+    }
+
+    // Add click handler for start game
+    startGameBtn.addEventListener('click', handleStartGame);
+
+    // Add touch handler for mobile
+    startGameBtn.addEventListener('touchend', (e) => {
+        e.preventDefault(); // Prevent any default touch behavior
+        handleStartGame();
     });
 
     // Category Selection
     const categoryButtons = document.querySelectorAll('.category-btn');
+    function handleCategorySelect(category) {
+        console.log('Category selected:', category); // Debug log
+        gameState.selectedCategory = category;
+        generateCards();
+        showAnswerPhase();
+    }
+
     categoryButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            gameState.selectedCategory = button.dataset.category;
-            startGamePhase();
+        // Handle click events
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleCategorySelect(button.textContent);
+        });
+
+        // Handle touch events
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleCategorySelect(button.textContent);
         });
     });
 
     // Ready to Guess Handler
-    readyToGuessBtn.addEventListener('click', () => {
+    function handleReadyToGuess() {
+        console.log('Ready to guess clicked'); // Debug log
         shuffleAndStartGuessingPhase();
+    }
+
+    readyToGuessBtn.addEventListener('click', handleReadyToGuess);
+    readyToGuessBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleReadyToGuess();
     });
 
     // Next Round Handler
-    nextRoundBtn.addEventListener('click', () => {
+    function handleNextRound() {
+        console.log('Next round clicked'); // Debug log
         if (gameState.currentRound < gameState.maxRounds) {
             startNewRound();
         } else {
             endGame();
         }
+    }
+
+    nextRoundBtn.addEventListener('click', handleNextRound);
+    nextRoundBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleNextRound();
     });
 
     // Next Card Handler
-    nextCardBtn.addEventListener('click', showNextCard);
+    function handleNextCard() {
+        console.log('Next card clicked'); // Debug log
+        if (gameState.currentCardIndex < gameState.cards.length - 1) {
+            gameState.currentCardIndex++;
+            showCurrentCard();
+        } else {
+            // All cards have been placed
+            // Only show results if they haven't been shown already
+            if (!gameState.resultsShown) {
+                gameState.resultsShown = true;
+                setTimeout(showResults, 1000);
+            }
+        }
+    }
+
+    nextCardBtn.addEventListener('click', handleNextCard);
+    nextCardBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleNextCard();
+    });
 
     // Initialize mobile-friendly interaction for game cards
     initializeMobileInteraction();
+
+    // Add touch event handlers
+    document.addEventListener('touchstart', function(e) {
+        if (e.target.matches('.category-btn, .score-slot, #current-card, button')) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    // Prevent double-tap zoom on buttons and interactive elements
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.category-btn, .score-slot, #current-card, button')) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize mobile height
+    setMobileHeight();
+    window.addEventListener('resize', setMobileHeight);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(setMobileHeight, 100);
+    });
+
+    // Handle visibility changes
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            setMobileHeight();
+        }
+    });
 }
 
 function initializeMobileInteraction() {
     const currentCard = document.getElementById('current-card');
     const slots = document.querySelectorAll('.score-slot');
     
-    // Remove draggable attribute
-    currentCard.removeAttribute('draggable');
-    
-    // Add tap-to-select functionality
-    currentCard.addEventListener('click', () => {
-        if (!currentCard.classList.contains('selected')) {
-            currentCard.classList.add('selected');
-            slots.forEach(slot => {
-                if (!slot.classList.contains('filled')) {
-                    slot.classList.add('selectable');
-                }
-            });
-        } else {
-            currentCard.classList.remove('selected');
-            slots.forEach(slot => slot.classList.remove('selectable'));
-        }
+    // Handle card selection
+    currentCard.addEventListener('click', handleCardClick);
+    currentCard.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleCardClick(e);
     });
 
-    // Add tap-to-place functionality
+    // Handle slot selection
     slots.forEach(slot => {
-        slot.addEventListener('click', () => {
-            if (slot.classList.contains('selectable') && !slot.classList.contains('filled')) {
-                const currentCard = document.getElementById('current-card');
-                handleCardPlacement(slot);
-                
-                // Reset selection state
-                currentCard.classList.remove('selected');
-                slots.forEach(s => s.classList.remove('selectable'));
-            }
+        slot.addEventListener('click', handleSlotClick);
+        slot.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            handleSlotClick(e);
         });
     });
+}
+
+function handleCardClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const currentCard = e.target.closest('#current-card');
+    const slots = document.querySelectorAll('.score-slot');
+    
+    // Don't allow selection if card is already placed
+    const currentQuestion = gameState.shuffledCards[gameState.currentCardIndex];
+    if (!currentCard || !currentQuestion || currentQuestion.placed) {
+        console.log('Card cannot be selected:', { placed: currentQuestion?.placed });
+        return;
+    }
+
+    const wasSelected = currentCard.classList.contains('selected');
+    console.log('Card clicked, was selected:', wasSelected);
+    
+    // Reset states
+    currentCard.classList.remove('selected');
+    slots.forEach(slot => slot.classList.remove('selectable'));
+    
+    if (!wasSelected) {
+        // Select the card and highlight available slots
+        currentCard.classList.add('selected');
+        slots.forEach(slot => {
+            if (!slot.classList.contains('filled')) {
+                slot.classList.add('selectable');
+            }
+        });
+    }
+}
+
+function handleSlotClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const slot = e.target.closest('.score-slot');
+    const currentCard = document.getElementById('current-card');
+    
+    if (!slot || !currentCard || !currentCard.classList.contains('selected')) {
+        console.log('Slot click ignored:', { 
+            hasSlot: !!slot, 
+            hasCard: !!currentCard, 
+            isSelected: currentCard?.classList.contains('selected') 
+        });
+        return;
+    }
+    
+    if (slot.classList.contains('filled')) {
+        console.log('Slot is already filled');
+        return;
+    }
+    
+    if (slot.classList.contains('selectable')) {
+        console.log('Placing card in slot');
+        handleCardPlacement(slot);
+        currentCard.classList.remove('selected');
+        document.querySelectorAll('.score-slot').forEach(s => s.classList.remove('selectable'));
+    }
 }
 
 // Game Flow Functions
@@ -168,6 +350,7 @@ function startNewRound() {
 
     // Show category selection screen
     showScreen('category');
+    console.log('Started new round:', gameState.currentRound); // Debug log
 }
 
 function startGamePhase() {
@@ -182,95 +365,152 @@ function startGamePhase() {
 }
 
 function generateCards() {
-    // Generate placeholder cards for the selected category
-    gameState.cards = Array.from({length: 5}, (_, i) => ({
-        id: i + 1,
-        question: `Sample Question ${i + 1} from ${gameState.selectedCategory} category`,
+    console.log('Generating cards for category:', gameState.selectedCategory);
+    
+    // Generate questions based on category
+    const questions = {
+        'Movies': [
+            'Would watch this movie alone',
+            'Would recommend this to a friend',
+            'Would fall asleep during this movie',
+            'Would watch this on a first date',
+            'Would watch this movie\'s sequel'
+        ],
+        'Food': [
+            'Would eat this for breakfast',
+            'Would cook this for guests',
+            'Would order this at a restaurant',
+            'Would eat this on a hot day',
+            'Would learn to make this at home'
+        ],
+        'Activities': [
+            'Would do this on a weekend',
+            'Would try this for the first time',
+            'Would teach someone else this',
+            'Would do this alone',
+            'Would pay to do this'
+        ],
+        'Places': [
+            'Would visit during summer',
+            'Would recommend to tourists',
+            'Would live here for a year',
+            'Would visit again',
+            'Would avoid during peak season'
+        ]
+    };
+
+    // Get questions for selected category or use generic ones if category not found
+    const categoryQuestions = questions[gameState.selectedCategory] || 
+        Array(5).fill(0).map((_, i) => `Question ${i + 1} for ${gameState.selectedCategory}`);
+    
+    // Create card objects
+    gameState.cards = categoryQuestions.map(question => ({
+        question: question,
         placed: false,
         slot: null
     }));
     
-    // Set the current question and correct answer
-    gameState.currentQuestion = gameState.cards[0];
-    // For demo purposes, make the first card the correct answer
-    gameState.correctAnswerCard = gameState.cards[0];
+    // Set one random card as the correct answer
+    const correctIndex = Math.floor(Math.random() * gameState.cards.length);
+    gameState.correctAnswerCard = gameState.cards[correctIndex];
     
-    // Display the question for non-guessers
-    document.getElementById('current-question').textContent = gameState.currentQuestion.question;
+    console.log('Generated cards:', gameState.cards);
+    console.log('Correct answer card:', gameState.correctAnswerCard);
 }
 
 function showAnswerPhase() {
+    // Update UI elements
+    document.getElementById('answer-phase-guesser').textContent = gameState.currentGuesser;
+    document.getElementById('answer-phase-category').textContent = gameState.selectedCategory;
+    
+    // Show the current question for non-guessers
+    const currentQuestionElement = document.getElementById('current-question');
+    if (currentQuestionElement) {
+        currentQuestionElement.textContent = gameState.correctAnswerCard.question;
+    }
+
+    // Show the answer phase screen
     showScreen('answer');
+    console.log('Showing answer phase screen with question:', gameState.correctAnswerCard.question);
 }
 
 function shuffleAndStartGuessingPhase() {
+    console.log('Starting guessing phase');
+    
+    // Update UI elements
+    document.getElementById('guessing-phase-guesser').textContent = gameState.currentGuesser;
+    document.getElementById('selected-category').textContent = gameState.selectedCategory;
+    
     // Shuffle the cards
     gameState.shuffledCards = [...gameState.cards];
-    for (let i = gameState.shuffledCards.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [gameState.shuffledCards[i], gameState.shuffledCards[j]] = 
-        [gameState.shuffledCards[j], gameState.shuffledCards[i]];
-    }
-    
-    // Reset card index
+    shuffleArray(gameState.shuffledCards);
     gameState.currentCardIndex = 0;
-    gameState.cards = gameState.shuffledCards;
     
-    // Move to guessing phase and show first card
+    // Show the game screen and first card
     showScreen('game');
     showCurrentCard();
 }
 
 function showCurrentCard() {
-    const currentCard = gameState.cards[gameState.currentCardIndex];
-    const cardsRemaining = gameState.cards.length - gameState.currentCardIndex;
+    console.log('Showing current card');
+    const currentCard = document.getElementById('current-card');
+    const currentQuestion = gameState.shuffledCards[gameState.currentCardIndex];
     
-    // Display current card
-    const cardElement = document.getElementById('current-card');
-    cardElement.textContent = currentCard.question;
-    cardElement.classList.remove('placed');
-    
-    // Update progress
-    document.getElementById('cards-remaining').textContent = 
-        `Question ${gameState.currentCardIndex + 1} of ${gameState.cards.length}`;
-    
-    // Show/hide next card button based on whether the current card has been placed
-    document.getElementById('next-card').style.display = currentCard.placed ? 'block' : 'none';
-}
-
-function showNextCard() {
-    if (gameState.currentCardIndex < gameState.cards.length - 1) {
-        gameState.currentCardIndex++;
-        showCurrentCard();
-    } else {
-        // All cards have been placed
-        // Only show results if they haven't been shown already
-        if (!gameState.resultsShown) {
-            gameState.resultsShown = true;
-            setTimeout(showResults, 1000);
+    if (currentCard && currentQuestion) {
+        console.log('Current question:', currentQuestion.question);
+        currentCard.textContent = currentQuestion.question;
+        currentCard.classList.remove('placed', 'selected');
+        currentCard.removeAttribute('draggable'); // Remove draggable attribute for mobile
+        
+        // Update instruction text
+        const instructionText = document.querySelector('.instruction-text');
+        if (instructionText) {
+            instructionText.textContent = 'Tap the question to select it, then tap a slot to place it!';
         }
+        
+        // Show/hide next card button
+        const nextCardBtn = document.getElementById('next-card');
+        if (nextCardBtn) {
+            nextCardBtn.style.display = currentQuestion.placed ? 'block' : 'none';
+        }
+    }
+    
+    // Update cards remaining counter
+    const remainingCards = gameState.shuffledCards.length - gameState.currentCardIndex - 1;
+    const cardsRemainingElement = document.getElementById('cards-remaining');
+    if (cardsRemainingElement) {
+        cardsRemainingElement.textContent = remainingCards > 0 ? 
+            `Questions remaining: ${remainingCards}` : 'Last question!';
     }
 }
 
 function handleCardPlacement(slot) {
     if (!slot || slot.classList.contains('filled')) return;
     
+    const currentCard = document.getElementById('current-card');
     const slotNumber = parseInt(slot.dataset.slot);
-    const currentCard = gameState.cards[gameState.currentCardIndex];
+    const currentQuestion = gameState.shuffledCards[gameState.currentCardIndex];
     
-    if (!currentCard.placed) {
-        currentCard.placed = true;
-        currentCard.slot = slotNumber;
+    if (!currentQuestion.placed) {
+        currentQuestion.placed = true;
+        currentQuestion.slot = slotNumber;
         
-        // Update the slot's content and mark it as filled
-        slot.innerHTML = currentCard.question;
+        // Update the slot's content
+        slot.innerHTML = `
+            <div class="placed-card">
+                ${currentQuestion.question}
+            </div>
+        `;
         slot.classList.add('filled');
+        currentCard.classList.add('placed');
         
         // Show the next card button
-        document.getElementById('next-card').style.display = 'block';
+        const nextCardBtn = document.getElementById('next-card');
+        nextCardBtn.style.display = 'block';
+        nextCardBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         
-        // If this was the last card, show results
-        if (gameState.currentCardIndex === gameState.cards.length - 1 && !gameState.resultsShown) {
+        // Check if this was the last card
+        if (gameState.currentCardIndex === gameState.shuffledCards.length - 1 && !gameState.resultsShown) {
             gameState.resultsShown = true;
             setTimeout(showResults, 1000);
         }
@@ -361,16 +601,46 @@ function endGame() {
 
 // Utility Functions
 function showScreen(screenId) {
-    Object.values(screens).forEach(screen => screen.classList.remove('active'));
-    screens[screenId].classList.add('active');
+    // Validate screen exists
+    if (!screens[screenId]) {
+        console.error(`Screen ${screenId} not found`);
+        return;
+    }
+    
+    // Hide all screens first
+    Object.values(screens).forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+    });
+    
+    // Show the requested screen
+    const screenToShow = screens[screenId];
+    screenToShow.style.display = 'flex';
+    screenToShow.classList.add('active');
+    
+    // Reset scroll position
+    screenToShow.scrollTop = 0;
+    
+    // Update game state
     gameState.currentPhase = screenId;
+    
+    // Refresh mobile height
+    setMobileHeight();
 }
 
 function updatePlayersList() {
     const playersList = document.getElementById('joined-players');
+    if (!playersList) return;
+    
     playersList.innerHTML = gameState.players
         .map(player => `<li>${player}</li>`)
         .join('');
+    
+    // Update the start game button state
+    const startGameBtn = document.getElementById('start-game');
+    if (startGameBtn) {
+        startGameBtn.disabled = gameState.players.length < 3;
+    }
 }
 
 function shuffleArray(array) {
@@ -379,3 +649,12 @@ function shuffleArray(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
 }
+
+function setMobileHeight() {
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+// Call this function on load and resize
+window.addEventListener('load', setMobileHeight);
+window.addEventListener('resize', setMobileHeight);

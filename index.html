@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Dumb Questions Game</title>
+    <title>Dumb Questions Game!</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="app">
         <!-- Lobby/Join Screen -->
-        <div id="lobby-screen" class="screen active">
-            <h1>Dumb Questions Game</h1>
+        <div id="lobby-screen" class="screen">
+            <h1>Dumb Questions Game!</h1>
             <div class="player-input">
-                <input type="text" id="player-name" placeholder="Enter your name">
-                <button id="join-game">Join Game</button>
+                <input type="text" id="player-name" placeholder="Enter your name" autocomplete="off">
+                <button id="join-game" class="action-button">Join Game</button>
             </div>
             <div class="players-list">
                 <h2>Players</h2>
                 <ul id="joined-players"></ul>
             </div>
-            <button id="start-game" disabled>Start Game</button>
+            <button id="start-game" class="action-button" disabled>Start Game (Need 3+ Players)</button>
         </div>
 
         <!-- Category Selection Screen -->
